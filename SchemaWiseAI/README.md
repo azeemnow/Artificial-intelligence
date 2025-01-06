@@ -230,3 +230,6 @@ Final Query: sourcetype="proxy" earliest=-24h@h latest=@h | where http_status=40
 
 ## Contributing
 Pull requests welcome. For major changes, open an issue first.
+
+### Disclosure
+Please note that some of the code were generated with the help of AI and Large Language Models (LLMs).The generated code has been carefully reviewed and adapted to ensure accuracy and relevance.
