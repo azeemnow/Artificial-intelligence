@@ -1,0 +1,10 @@
+setup.py
+integrations/__init__.py
+integrations/ollama_handler.py
+schemawiseAI.egg-info/PKG-INFO
+schemawiseAI.egg-info/SOURCES.txt
+schemawiseAI.egg-info/dependency_links.txt
+schemawiseAI.egg-info/requires.txt
+schemawiseAI.egg-info/top_level.txt
+tests/test_integration.py
+tests/test_script.py
