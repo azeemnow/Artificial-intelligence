@@ -40,6 +40,71 @@ schemawiseAI/
 - Ollama
 - PyYAML
 
+
+### Installation
+```bash
+git clone https://github.com/azeemnow/Artificial-intelligence.git
+cd SchemaWiseAI
+pip install -e .
+```
+
+#### Python Package Error
+If you encounter the following error while trying to install the required Python packages:
+```error: externally-managed-environment
+
+× This environment is externally managed
+╰─> To install Python packages system-wide, try apt install
+    python3-xyz, where xyz is the package you are trying to
+    install.
+```
+
+This error typically occurs because your system's Python environment is being managed by the operating system, preventing you from installing packages globally. To resolve this, we recommend using a virtual environment to install Python packages locally without affecting your system setup. Follow the steps below for virtual environment.
+
+### Steps to Create, Activate, and Deactivate a Virtual Environment
+1. Install Python Virtual Environment Support (if needed)
+If you don't have python3-venv installed, you can install it by running:
+```sudo apt install python3-venv ```
+
+2. Create a Virtual Environment
+```python3 -m venv venv```
+This will create a new directory named venv in your project folder, containing the virtual environment.
+
+3. Activate the Virtual Environment
+To activate the virtual environment, use the following command:
+For Linux/macOS:
+```source venv/bin/activate```
+
+After activating the virtual environment, your prompt should change to indicate the environment is active. It will look something like this:
+
+```(venv) user@ubuntu24:~/Documents/YourProject$```
+
+4. Install the Required Python Packages
+With the virtual environment activated, you can now run the installation command:
+```pip install -e .```
+
+This will install the Python packages locally within the virtual environment, avoiding the "externally-managed-environment" error.
+
+5. Deactivate the Virtual Environment
+Once you're done with the virtual environment, you can deactivate it by running:
+```deactivate```
+Your terminal prompt should return to normal, and you will be back to the system's Python environment.
+
+### Reactivate an Existing Virtual Environment:
+You do not need to recreate the virtual environment every time you want to use it. Once you’ve created the virtual environment, you can simply reactivate it when needed. The virtual environment persists in its directory, and you can return to it anytime.
+
+Here's how to reactivate an existing virtual environment:
+1. Navigate to your project directory (where the venv folder is located).
+	```cd path/to/your/project```
+
+2. Activate the previously created virtual environment:
+For Linux/macOS:
+	```source venv/bin/activate```
+After activating, you should see (venv) at the beginning of your terminal prompt, indicating the virtual environment is active.
+
+3. Install additional packages (if needed) or continue working with your project.
+4.Deactivate the virtual environment when you're done.
+
+
 ### Why Use Ollama for SchemaWiseAI?
 
 Ollama (https://ollama.com/) is the perfect platform for building SchemaWiseAI, a middleware tool that adapts LLM-generated queries to match custom data schemas. Here's why:
@@ -52,16 +117,27 @@ Ollama (https://ollama.com/) is the perfect platform for building SchemaWiseAI, 
 
 Ollama simplifies building a tool like SchemaWiseAI, making it easy to align AI outputs with your specific data needs.
 
-### Installation
-```bash
-git clone https://github.com/azeemnow/SchemaWiseAI.git
-cd SchemaWiseAI
-pip install -e .
-```
+
+### Install Ollama
+
+I have a quick blog detailing the steps for installing and configuring Ollama. You can check it out here: [How to Install and Configure Ollama on Kali Linux](https://azeemnow.com/2024/11/02/how-to-install-and-configure-ollama-on-kali-linux/)
 
 ### Running Ollama
+
+First, verify that Ollama is running by using the following command:
 ```bash
+ollama list
+```
+
+
+If it's not running, start Ollama with:
+```
 ollama serve
+```
+
+
+Make sure you have a model pulled. You can do so with:
+```
 ollama pull llama3.2:1b
 ```
 
