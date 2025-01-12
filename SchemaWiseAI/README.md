@@ -16,8 +16,6 @@ SchemaWiseAI solves this by ingesting the user’s custom data schemas and autom
 - Field name mapping
 - Query transformation
 - Template-based query generation
-- Time-range handling
-- Rate calculations
 - Splunk query optimization
 
 ## Project Structure
@@ -44,6 +42,7 @@ schemawiseAI/
 ### Installation
 ```bash
 git clone https://github.com/azeemnow/Artificial-intelligence.git
+cd Artificial-intelligence #ignore the "AI-Policy-Development-Guide" directory
 cd SchemaWiseAI
 pip install -e .
 ```
@@ -58,74 +57,11 @@ If you encounter the following error while trying to install the required Python
     install.
 ```
 
-This error typically occurs because your system's Python environment is being managed by the operating system, preventing you from installing packages globally. To resolve this, we recommend using a virtual environment to install Python packages locally without affecting your system setup. Follow the steps below for virtual environment.
+This error typically occurs because your system's Python environment is being managed by the operating system, preventing you from installing packages globally. To resolve this, we recommend using a virtual environment to install Python packages locally without affecting your system setup. 
 
-### Steps to Create, Activate, and Deactivate a Virtual Environment
-1. Install Python Virtual Environment Support (if needed)
-If you don't have python3-venv installed, you can install it by running:
+Refer to the **Troubleshoot** section at the end for instructions on setting up a virtual environment.
 
-```sudo apt install python3-venv ```
-
-2. Create a Virtual Environment
-
-```python3 -m venv venv```
-
-This will create a new directory named venv in your project folder, containing the virtual environment.
-
-3. Activate the Virtual Environment
-
-To activate the virtual environment, use the following command:
-For Linux/macOS:
-
-```source venv/bin/activate```
-
-After activating the virtual environment, your prompt should change to indicate the environment is active. It will look something like this:
-
-```(venv) user@ubuntu24:~/Documents/YourProject$```
-
-4. Install the Required Python Packages
-
-With the virtual environment activated, you can now run the installation command:
-
-```pip install -e .```
-
-This will install the Python packages locally within the virtual environment, avoiding the "externally-managed-environment" error.
-
-5. Deactivate the Virtual Environment
-
-Once you're done with the virtual environment, you can deactivate it by running:
-
-```deactivate```
-
-Your terminal prompt should return to normal, and you will be back to the system's Python environment.
-
-
-### Reactivate an Existing Virtual Environment
-
-You do not need to recreate the virtual environment every time you want to use it. Once you’ve created the virtual environment, you can simply reactivate it when needed. The virtual environment persists in its directory, and you can return to it anytime.
-
-
-Here's how to reactivate an existing virtual environment:
-
-1. Navigate to your project directory (where the venv folder is located).
-
-```cd path/to/your/project```
-
-
-2. Activate the previously created virtual environment:
-
-For Linux/macOS:
-
-```source venv/bin/activate```
-
-After activating, you should see (venv) at the beginning of your terminal prompt, indicating the virtual environment is active.
-
-3. Install additional packages (if needed) or continue working with your project.
-
-4.Deactivate the virtual environment when you're done.
-
-
-### Why Use Ollama for SchemaWiseAI?
+## Why Use Ollama for SchemaWiseAI?
 
 Ollama (https://ollama.com/) is the perfect platform for building SchemaWiseAI, a middleware tool that adapts LLM-generated queries to match custom data schemas. Here's why:
 
@@ -161,39 +97,85 @@ Make sure you have a model pulled. You can do so with:
 ollama pull llama3.2:1b
 ```
 
-### Usage Example
+# Usage 
+## Schema Mapping
+The project currently includes a basic proxy schema structure. You can find detailed information about the schema and field mappings in the `test_integration.py` file (located inside the `tests` directory .
+
 ```python
-from schemawiseAI.integrations.ollama_handler import QueryGenerator
-from schemawiseAI.core.registry import SchemaRegistry
-
-# Initialize registry with your schema
-registry = SchemaRegistry()
-registry._extract_rules({
-    "proxy_logs": {
-        "fields": {
-            "srcip": {"map_to": "src"},
-            "dstip": {"map_to": "dst"},
-            "bytes": {"map_to": "bytes_total"}
-        }
-    }
-})
-
-# Create generator
-generator = QueryGenerator(registry)
-
-# Generate and transform query
-request = "Show me top 5 source IPs by bandwidth usage"
-result = generator.process_request(request)
-print(result)
+"proxy_logs": {
+            "fields": {
+                "srcip": {"map_to": "src", "type": "string"},
+                "dstip": {"map_to": "dst", "type": "string"},
+                "bytes": {"map_to": "bytes_total", "type": "string"},
+                "status": {"map_to": "http_status", "type": "string"},
+                "dhost": {"map_to": "dest_host", "type": "string"},
+                "proto": {"map_to": "protocol", "type": "string"},
+                "mtd": {"map_to": "method", "type": "string"},
+                "url": {"map_to": "uri", "type": "string"}
+            }
 ```
-
-### Example Output
-```sql
-sourcetype="proxy" | stats sum(bytes_total) as total_bytes by src | sort -total_bytes | head 5
+The `test_integration.py` file also contains a list of test cases used for training and evaluating the proof of concept. You can add to this list and test to see how the program performs.
+```python
+test_cases = [
+        # Bandwidth and Traffic Analysis
+        "Show me top 5 source IPs by bandwidth usage per day",
+        "Show me the protocols with highest bandwidth consumption rate",
+        "Count requests and bandwidth by protocol",
+        
+        # Status Code and Error Analysis
+        "List all HTTP GET requests with status 404 from the last hour",
+        "Show me all failed requests with status >= 400",
+        "Show me POST requests with status code 500",
+        "What domains have the most failed requests?",
+        "Find domains with most 404 errors in the last day",
+        
+        # Domain Analysis - General
+        "Find the most accessed domains in the last week",
+        
+        # EXE File Analysis
+        "Show me source IPs downloading exe files",
+        
+        # Specific Domain Traffic
+        "Find outbound traffic to google.com",
+        "Show me errors from microsoft.com",
+        "What request methods are used for facebook.com",
+        "How many unique users access amazon.com",
+        "Show traffic patterns for github.com",
+        
+        # Domain Pattern Analysis
+        "List all domains ending with .edu",
+        "Show domains ending with .gov",
+        "Show traffic to *.google.com",
+        "Find errors from any microsoft.com subdomain",
+        "Show me access patterns for github.com and its subdomains",
+        "Count unique users accessing *.amazon.com",
+        
+        # Time-Based Domain Analysis
+        "Show .edu traffic in the last hour",
+        "Find failed requests to microsoft.com today",
+        
+        # Method-Specific Domain Analysis
+        "What HTTP methods are used on *.github.com",
+        "Show POST requests to api.example.com"
+    ]
 ```
-### Current Test Results
+## Run Program
+```python
+python tests/test_integration.py
+```
+### Successful Output
 
-#### Process Flow
+If the program runs successfully, the output should resemble the following:
+```plaintext
+User Request: Show me top 5 source IPs by bandwidth usage per day
+
+Processing request: Show me top 5 source IPs by bandwidth usage per day
+Using template query: sourcetype="proxy" | stats sum(bytes) as total_bytes, count as request_count by srcip | eval bytes_per_sec=total_bytes/86400 | sort -total_bytes | head 5
+Processed query: sourcetype="proxy" | stats sum(bytes_total) as total_bytes, count as request_count by src | eval bytes_per_sec=total_bytes/86400 | sort -total_bytes | head 5
+Final Query: sourcetype="proxy" | stats sum(bytes_total) as total_bytes, count as request_count by src | eval bytes_per_sec=total_bytes/86400 | sort -total_bytes | head 5
+```
+###  Output Explanation 
+
 
 1. **User Request**  
    The natural language question from the user about what they want to know from their proxy logs.
@@ -210,9 +192,7 @@ sourcetype="proxy" | stats sum(bytes_total) as total_bytes by src | sort -total_
 5. **Final Query**  
    The completed query ready for execution in Splunk, with all field names matching the organization's schema.
 
----
-
-#### Purpose of Using Templates
+### Use of Templates
 
 The template system serves two main purposes:
 
@@ -223,12 +203,11 @@ The template system serves two main purposes:
   Templates are faster and more reliable than LLM-generated queries.
 
 #### When a Request Doesn’t Match Any Template
-
 SchemaWiseAI follows a fallback process to handle unmatched user requests.
 
 ---
-### Example Transformation  
-SchemaWiseAI transformed a natural language request into a Splunk query while mapping generic field names to organization-specific ones (e.g., `status → http_status`).
+## Evaluation
+Below is an example of transformations successfully performed by SchemaWiseAI, where a natural language user request for a specific Splunk query was generated by the LLM, while simultaneously mapping generic field names to organization-specific ones (e.g., `status → http_status`).
 
 
 ```plaintext
@@ -314,18 +293,117 @@ Final Query: sourcetype="proxy" earliest=-24h@h latest=@h | where http_status=40
 ------------------------------------------------------------
 ```
 ## Current Limitations
-- Supports Splunk queries only
-- Limited to proxy log schema
-- Requires Ollama setup
 
-## Future Roadmap
-- Integration for other LLMs (OpenAI, etc).
-- Include additional schemas (splunk: palo alto, dns, windows, etc. MDRs)
-- UX/UI
+#### Maintenance Issues:
+ -   Growing template list becomes harder to manage
+ -   Templates require constant updates
+ -   Risk of template conflicts
+ -   Hard to maintain consistency
+#### Flexibility Problems:
+ -   Can't handle unexpected query patterns
+ -   Limited to predefined scenarios
+ -   Requires manual template creation
+ -   Rigid structure
+#### Scaling Challenges:
+ -   Doesn't scale well with new use cases
+ -   Not easily adaptable to different log types
+ -   Hard to extend to other query languages
+ -   High maintenance overhead
+ 
+## Potential Solutions & Future Work
+ - Integration for other LLMs (OpenAI, etc).
+ - Include additional schemas (splunk: palo alto, dns, windows, etc. MDRs)
+ - The manage scalability limitations, take machine learning, pattern-based learning approach, or a hybrid approach.
+ - Benefits of a hybrid approach:
+ --Use templates for common, well-defined patterns
+--Use ML for unexpected queries
+--Learn from user feedback
+--Gradually improve accuracy
+--Scale better with usage
+ 
 
-
-## Contributing
-Pull requests welcome. For major changes, open an issue first.
 
 ### Disclosure
-Please note that some of the code were generated with the help of AI and Large Language Models (LLMs).The generated code has been carefully reviewed and adapted to ensure accuracy and relevance.
+This project includes contributions from AI-generated code (e.g., ChatGPT, Claude, etc.) 
+
+#
+# Troubleshoot
+If you encounter the following error while trying to install the required Python packages:
+```error: externally-managed-environment
+
+× This environment is externally managed
+╰─> To install Python packages system-wide, try apt install
+    python3-xyz, where xyz is the package you are trying to
+    install.
+
+```
+
+This error occurs because your system’s Python environment is controlled by the operating system, blocking global package installs. To fix this, use a virtual environment to install packages locally without affecting your system.
+
+### Steps to Create, Activate, and Deactivate a Virtual Environment
+1. Install Python Virtual Environment Support (if needed)
+If you don't have python3-venv installed, you can install it by running:
+
+```sudo apt install python3-venv ```
+
+2. Create a Virtual Environment
+
+```python3 -m venv venv```
+
+This will create a new directory named venv in your project folder, containing the virtual environment.
+
+3. Activate the Virtual Environment
+
+To activate the virtual environment, use the following command:
+For Linux/macOS:
+
+```source venv/bin/activate```
+
+After activating the virtual environment, your prompt should change to indicate the environment is active. It will look something like this:
+
+```(venv) user@ubuntu24:~/Documents/YourProject$```
+
+4. Install the Required Python Packages
+
+With the virtual environment activated, you can now run the installation command:
+
+```pip install -e .```
+
+This will install the Python packages locally within the virtual environment, avoiding the "externally-managed-environment" error.
+
+5. Deactivate the Virtual Environment
+
+Once you're done with the virtual environment, you can deactivate it by running:
+
+```deactivate```
+
+Your terminal prompt should return to normal, and you will be back to the system's Python environment.
+
+
+### Reactivate an Existing Virtual Environment
+
+You do not need to recreate the virtual environment every time you want to use it. Once you’ve created the virtual environment, you can simply reactivate it when needed. The virtual environment persists in its directory, and you can return to it anytime.
+
+
+Here's how to reactivate an existing virtual environment:
+
+1. Navigate to your project directory (where the venv folder is located).
+
+```cd path/to/your/project```
+
+
+2. Activate the previously created virtual environment:
+
+For Linux/macOS:
+
+```source venv/bin/activate```
+
+After activating, you should see (venv) at the beginning of your terminal prompt, indicating the virtual environment is active.
+
+3. Install additional packages (if needed) or continue working with your project.
+
+4. Deactivate the virtual environment when you're done.
+---------------
+
+
+

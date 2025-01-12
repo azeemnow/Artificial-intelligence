@@ -12,13 +12,30 @@ class OllamaHandler:
     def get_template_for_request(self, request: str) -> str:
         templates = {
             "bandwidth": 'sourcetype="proxy" | stats sum(bytes) as total_bytes, count as request_count by srcip | eval bytes_per_sec=total_bytes/86400 | sort -total_bytes | head {limit}',
+            
             "method_status": 'sourcetype="proxy" | where mtd="{method}" AND status{operator}{code} | stats count as request_count by url, srcip | sort -request_count',
+            
             "domains_time": 'sourcetype="proxy" {timerange}| stats count as request_count by dhost | sort -request_count | head 10',
+            
             "failed_requests": 'sourcetype="proxy" | where status>=400 | stats count as error_count by status, dhost | sort -error_count',
+            
             "protocol_bandwidth": 'sourcetype="proxy" | stats count as request_count, sum(bytes) as total_bytes by proto | eval MB_per_sec=round(total_bytes/1024/1024/86400,2) | sort -total_bytes',
+            
             "exe_files": 'sourcetype="proxy" | where url LIKE "%.exe" OR url ENDS WITH ".exe" | stats count as download_count by srcip, url | sort -download_count',
+            
             "failed_domains": 'sourcetype="proxy" | where status>=400 | stats count as error_count by dhost | sort -error_count | head 10',
-            "status_domains_time": 'sourcetype="proxy" {timerange}| where status{operator}{code} | stats count as error_count by dhost | sort -error_count | head 10'
+            
+            "status_domains_time": 'sourcetype="proxy" {timerange}| where status{operator}{code} | stats count as error_count by dhost | sort -error_count | head 10',
+            
+            "domain_suffix": 'sourcetype="proxy" | where dhost LIKE "*.{suffix}" | stats count as request_count, sum(bytes) as total_bytes by dhost | sort -request_count | head 100',
+            
+            "domain_traffic": 'sourcetype="proxy" | where dhost LIKE "*.{domain}" OR dhost="{domain}" | stats count as request_count, sum(bytes) as total_bytes by dhost, srcip | sort -total_bytes',
+            
+            "domain_errors": 'sourcetype="proxy" | where (dhost LIKE "*.{domain}" OR dhost="{domain}") AND status>=400 | stats count as error_count by status, dhost | sort -error_count',
+            
+            "domain_methods": 'sourcetype="proxy" | where dhost LIKE "*.{domain}" OR dhost="{domain}" | stats count as request_count by mtd, dhost | sort -request_count',
+            
+            "domain_users": 'sourcetype="proxy" | where dhost LIKE "*.{domain}" OR dhost="{domain}" | stats dc(srcip) as unique_users, count as request_count by dhost | sort -request_count'
         }
 
         def get_timerange(request):
@@ -30,6 +47,45 @@ class OllamaHandler:
                 return 'earliest=-7d@d latest=@d '
             return ''
 
+        def extract_domain_info(request: str) -> tuple:
+            """Extract domain and determine if it's a suffix search."""
+            domain_extensions = ['.com', '.org', '.net', '.edu', '.gov']
+            words = request.lower().split()
+
+            # Check for suffix-specific search
+            if "ending with" in request.lower() or "ends with" in request.lower():
+                for ext in domain_extensions:
+                    if ext in request.lower():
+                        return None, ext.lstrip('.')
+
+            # Regular domain search
+            for word in words:
+                if any(ext in word for ext in domain_extensions):
+                    return word.strip('*.'), None
+                    
+            return None, None
+
+        # Extract domain info
+        domain, suffix = extract_domain_info(request)
+        
+        # Handle suffix searches
+        if suffix:
+            return templates["domain_suffix"].format(suffix=suffix)
+            
+        # Handle specific domain searches
+        if domain:
+            if "traffic" in request.lower():
+                return templates["domain_traffic"].format(domain=domain)
+            elif "error" in request.lower():
+                return templates["domain_errors"].format(domain=domain)
+            elif "method" in request.lower() or "request type" in request.lower():
+                return templates["domain_methods"].format(domain=domain)
+            elif "user" in request.lower():
+                return templates["domain_users"].format(domain=domain)
+            else:
+                return templates["domain_traffic"].format(domain=domain)
+
+        # Standard template matching
         if "exe" in request.lower():
             return templates["exe_files"]
             
