@@ -1,3 +1,4 @@
+
 # SchemaWiseAI
 
 SchemaWiseAI is a middleware solution that adapts LLM-generated queries to match your specific data schema. It bridges the gap between generic LLM outputs and organization-specific data structures.
@@ -167,15 +168,24 @@ python tests/test_integration.py
 
 If the program runs successfully, the output should resemble the following:
 ```plaintext
-User Request: Show me top 5 source IPs by bandwidth usage per day
+User Request: List all HTTP GET requests with status 404 from the last hour
 
-Processing request: Show me top 5 source IPs by bandwidth usage per day
-Using template query: sourcetype="proxy" | stats sum(bytes) as total_bytes, count as request_count by srcip | eval bytes_per_sec=total_bytes/86400 | sort -total_bytes | head 5
-Processed query: sourcetype="proxy" | stats sum(bytes_total) as total_bytes, count as request_count by src | eval bytes_per_sec=total_bytes/86400 | sort -total_bytes | head 5
-Final Query: sourcetype="proxy" | stats sum(bytes_total) as total_bytes, count as request_count by src | eval bytes_per_sec=total_bytes/86400 | sort -total_bytes | head 5
+Processing request: List all HTTP GET requests with status 404 from the last hour
+Using template query: sourcetype="proxy" | where mtd="GET" AND status=404 | stats count as request_count by url, srcip | sort -request_count
+Processed query: sourcetype="proxy" | where method="GET" AND http_status=404 | stats count as request_count by uri, src | sort -request_count
+Final Query: sourcetype="proxy" | where method="GET" AND http_status=404 | stats count as request_count by uri, src | sort -request_count
 ```
 ###  Output Explanation 
 
+| **Step**               | **Description**                                                                                       | **Query**                                                                                                          | **Changes Made**                                                                                       |
+|-------------------------|-------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------|
+| **User Request**        | The natural language question from the user about what they want to know from their proxy logs.       | *(Not applicable)*                                                                                                | No query yet, just a plain user request in natural language.                                           |
+| **Processing Request**  | SchemaWiseAI acknowledges receipt and begins processing the input.                                   | *(Not applicable)*                                                                                                | No query yet; SchemaWiseAI is processing the input.                                                    |
+| **Using Template Query**| The initial query generated using predefined templates, using standard field names. | `sourcetype="proxy" | where mtd="GET" AND status=404 | stats count as request_count by url, srcip | sort -request_count` | Used placeholder field names: `mtd`, `status`, `url`, and `srcip`.                                    |
+| **Processed Query**     | The query after field name mapping is applied.    | `sourcetype="proxy" | where method="GET" AND http_status=404 | stats count as request_count by uri, src | sort -request_count` | Changed field names: `mtd` → `method`, `status` → `http_status`, `url` → `uri`, `srcip` → `src`.      |
+| **Final Query**         | The completed query ready for execution in Splunk, with all field names matching the organization's schema. | `sourcetype="proxy" | where method="GET" AND http_status=404 | stats count as request_count by uri, src | sort -request_count` | No further changes made; same as the processed query.                                                 |
+
+#### Summery
 
 1. **User Request**  
    The natural language question from the user about what they want to know from their proxy logs.
@@ -212,44 +222,12 @@ Below is an example of transformations successfully performed by SchemaWiseAI, w
 
 ```plaintext
 ============================================================
-User Request: Show me top 5 source IPs by bandwidth usage per day
-
-Processing request: Show me top 5 source IPs by bandwidth usage per day
-Using template query: sourcetype="proxy" | stats sum(bytes) as total_bytes, count as request_count by srcip | eval bytes_per_sec=total_bytes/86400 | sort -total_bytes | head 5
-Processed query: sourcetype="proxy" | stats sum(bytes_total) as total_bytes, count as request_count by src | eval bytes_per_sec=total_bytes/86400 | sort -total_bytes | head 5
-Final Query: sourcetype="proxy" | stats sum(bytes_total) as total_bytes, count as request_count by src | eval bytes_per_sec=total_bytes/86400 | sort -total_bytes | head 5
-------------------------------------------------------------
-
-User Request: List all HTTP GET requests with status 404 from the last hour
-
-Processing request: List all HTTP GET requests with status 404 from the last hour
-Using template query: sourcetype="proxy" | where mtd="GET" AND status=404 | stats count as request_count by url, srcip | sort -request_count
-Processed query: sourcetype="proxy" | where method="GET" AND http_status=404 | stats count as request_count by uri, src | sort -request_count
-Final Query: sourcetype="proxy" | where method="GET" AND http_status=404 | stats count as request_count by uri, src | sort -request_count
-------------------------------------------------------------
-
-User Request: Find the most accessed domains in the last week
-
-Processing request: Find the most accessed domains in the last week
-Using template query: sourcetype="proxy" earliest=-7d@d latest=@d | stats count as request_count by dhost | sort -request_count | head 10
-Processed query: sourcetype="proxy" earliest=-7d@d latest=@d | stats count as request_count by dest_host | sort -request_count | head 10
-Final Query: sourcetype="proxy" earliest=-7d@d latest=@d | stats count as request_count by dest_host | sort -request_count | head 10
-------------------------------------------------------------
-
 User Request: Show me all failed requests with status >= 400
 
 Processing request: Show me all failed requests with status >= 400
 Using template query: sourcetype="proxy" | where status>=400 | stats count as error_count by status, dhost | sort -error_count
 Processed query: sourcetype="proxy" | where http_status>=400 | stats count as error_count by http_status, dest_host | sort -error_count
 Final Query: sourcetype="proxy" | where http_status>=400 | stats count as error_count by http_status, dest_host | sort -error_count
-------------------------------------------------------------
-
-User Request: Count requests and bandwidth by protocol
-
-Processing request: Count requests and bandwidth by protocol
-Using template query: sourcetype="proxy" | stats count as request_count, sum(bytes) as total_bytes by proto | eval MB_per_sec=round(total_bytes/1024/1024/86400,2) | sort -total_bytes
-Processed query: sourcetype="proxy" | stats count as request_count, sum(bytes_total) as total_bytes by protocol | eval MB_per_sec=round(total_bytes/1024/1024/86400,2) | sort -total_bytes
-Final Query: sourcetype="proxy" | stats count as request_count, sum(bytes_total) as total_bytes by protocol | eval MB_per_sec=round(total_bytes/1024/1024/86400,2) | sort -total_bytes
 ------------------------------------------------------------
 
 User Request: Show me POST requests with status code 500
@@ -268,6 +246,22 @@ Processed query: sourcetype="proxy" | where http_status>=400 | stats count as er
 Final Query: sourcetype="proxy" | where http_status>=400 | stats count as error_count by dest_host | sort -error_count | head 10
 ------------------------------------------------------------
 
+User Request: Find domains with most 404 errors in the last day
+
+Processing request: Find domains with most 404 errors in the last day
+Using template query: sourcetype="proxy" earliest=-24h@h latest=@h | where status=404 | stats count as error_count by dhost | sort -error_count | head 10
+Processed query: sourcetype="proxy" earliest=-24h@h latest=@h | where http_status=404 | stats count as error_count by dest_host | sort -error_count | head 10
+Final Query: sourcetype="proxy" earliest=-24h@h latest=@h | where http_status=404 | stats count as error_count by dest_host | sort -error_count | head 10
+------------------------------------------------------------
+
+User Request: Find the most accessed domains in the last week
+
+Processing request: Find the most accessed domains in the last week
+Using template query: sourcetype="proxy" earliest=-7d@d latest=@d | stats count as request_count by dhost | sort -request_count | head 10
+Processed query: sourcetype="proxy" earliest=-7d@d latest=@d | stats count as request_count by dest_host | sort -request_count | head 10
+Final Query: sourcetype="proxy" earliest=-7d@d latest=@d | stats count as request_count by dest_host | sort -request_count | head 10
+------------------------------------------------------------
+
 User Request: Show me source IPs downloading exe files
 
 Processing request: Show me source IPs downloading exe files
@@ -276,20 +270,125 @@ Processed query: sourcetype="proxy" | where uri LIKE "%.exe" OR uri ENDS WITH ".
 Final Query: sourcetype="proxy" | where uri LIKE "%.exe" OR uri ENDS WITH ".exe" | stats count as download_count by src, uri | sort -download_count
 ------------------------------------------------------------
 
-User Request: Show me the protocols with highest bandwidth consumption rate
+User Request: Find outbound traffic to google.com
 
-Processing request: Show me the protocols with highest bandwidth consumption rate
-Using template query: sourcetype="proxy" | stats count as request_count, sum(bytes) as total_bytes by proto | eval MB_per_sec=round(total_bytes/1024/1024/86400,2) | sort -total_bytes
-Processed query: sourcetype="proxy" | stats count as request_count, sum(bytes_total) as total_bytes by protocol | eval MB_per_sec=round(total_bytes/1024/1024/86400,2) | sort -total_bytes
-Final Query: sourcetype="proxy" | stats count as request_count, sum(bytes_total) as total_bytes by protocol | eval MB_per_sec=round(total_bytes/1024/1024/86400,2) | sort -total_bytes
+Processing request: Find outbound traffic to google.com
+Using template query: sourcetype="proxy" | where dhost LIKE "*.google.com" OR dhost="google.com" | stats count as request_count, sum(bytes) as total_bytes by dhost, srcip | sort -total_bytes
+Processed query: sourcetype="proxy" | where dest_host LIKE "*.google.com" OR dest_host="google.com" | stats count as request_count, sum(bytes_total) as total_bytes by dest_host, src | sort -total_bytes
+Final Query: sourcetype="proxy" | where dest_host LIKE "*.google.com" OR dest_host="google.com" | stats count as request_count, sum(bytes_total) as total_bytes by dest_host, src | sort -total_bytes
 ------------------------------------------------------------
 
-User Request: Find domains with most 404 errors in the last day
+User Request: Show me errors from microsoft.com
 
-Processing request: Find domains with most 404 errors in the last day
-Using template query: sourcetype="proxy" earliest=-24h@h latest=@h | where status=404 | stats count as error_count by dhost | sort -error_count | head 10
-Processed query: sourcetype="proxy" earliest=-24h@h latest=@h | where http_status=404 | stats count as error_count by dest_host | sort -error_count | head 10
-Final Query: sourcetype="proxy" earliest=-24h@h latest=@h | where http_status=404 | stats count as error_count by dest_host | sort -error_count | head 10
+Processing request: Show me errors from microsoft.com
+Using template query: sourcetype="proxy" | where (dhost LIKE "*.microsoft.com" OR dhost="microsoft.com") AND status>=400 | stats count as error_count by status, dhost | sort -error_count
+Processed query: sourcetype="proxy" | where (dest_host LIKE "*.microsoft.com" OR dest_host="microsoft.com") AND http_status>=400 | stats count as error_count by http_status, dest_host | sort -error_count
+Final Query: sourcetype="proxy" | where (dest_host LIKE "*.microsoft.com" OR dest_host="microsoft.com") AND http_status>=400 | stats count as error_count by http_status, dest_host | sort -error_count
+------------------------------------------------------------
+
+User Request: What request methods are used for facebook.com
+
+Processing request: What request methods are used for facebook.com
+Using template query: sourcetype="proxy" | where dhost LIKE "*.facebook.com" OR dhost="facebook.com" | stats count as request_count by mtd, dhost | sort -request_count
+Processed query: sourcetype="proxy" | where dest_host LIKE "*.facebook.com" OR dest_host="facebook.com" | stats count as request_count by method, dest_host | sort -request_count
+Final Query: sourcetype="proxy" | where dest_host LIKE "*.facebook.com" OR dest_host="facebook.com" | stats count as request_count by method, dest_host | sort -request_count
+------------------------------------------------------------
+
+User Request: How many unique users access amazon.com
+
+Processing request: How many unique users access amazon.com
+Using template query: sourcetype="proxy" | where dhost LIKE "*.amazon.com" OR dhost="amazon.com" | stats dc(srcip) as unique_users, count as request_count by dhost | sort -request_count
+Processed query: sourcetype="proxy" | where dest_host LIKE "*.amazon.com" OR dest_host="amazon.com" | stats dc(src) as unique_users, count as request_count by dest_host | sort -request_count
+Final Query: sourcetype="proxy" | where dest_host LIKE "*.amazon.com" OR dest_host="amazon.com" | stats dc(src) as unique_users, count as request_count by dest_host | sort -request_count
+------------------------------------------------------------
+
+User Request: Show traffic patterns for github.com
+
+Processing request: Show traffic patterns for github.com
+Using template query: sourcetype="proxy" | where dhost LIKE "*.github.com" OR dhost="github.com" | stats count as request_count, sum(bytes) as total_bytes by dhost, srcip | sort -total_bytes
+Processed query: sourcetype="proxy" | where dest_host LIKE "*.github.com" OR dest_host="github.com" | stats count as request_count, sum(bytes_total) as total_bytes by dest_host, src | sort -total_bytes
+Final Query: sourcetype="proxy" | where dest_host LIKE "*.github.com" OR dest_host="github.com" | stats count as request_count, sum(bytes_total) as total_bytes by dest_host, src | sort -total_bytes
+------------------------------------------------------------
+
+User Request: List all domains ending with .edu
+
+Processing request: List all domains ending with .edu
+Using template query: sourcetype="proxy" | where dhost LIKE "*.edu" | stats count as request_count, sum(bytes) as total_bytes by dhost | sort -request_count | head 100
+Processed query: sourcetype="proxy" | where dest_host LIKE "*.edu" | stats count as request_count, sum(bytes_total) as total_bytes by dest_host | sort -request_count | head 100
+Final Query: sourcetype="proxy" | where dest_host LIKE "*.edu" | stats count as request_count, sum(bytes_total) as total_bytes by dest_host | sort -request_count | head 100
+------------------------------------------------------------
+
+User Request: Show domains ending with .gov
+
+Processing request: Show domains ending with .gov
+Using template query: sourcetype="proxy" | where dhost LIKE "*.gov" | stats count as request_count, sum(bytes) as total_bytes by dhost | sort -request_count | head 100
+Processed query: sourcetype="proxy" | where dest_host LIKE "*.gov" | stats count as request_count, sum(bytes_total) as total_bytes by dest_host | sort -request_count | head 100
+Final Query: sourcetype="proxy" | where dest_host LIKE "*.gov" | stats count as request_count, sum(bytes_total) as total_bytes by dest_host | sort -request_count | head 100
+------------------------------------------------------------
+
+User Request: Show traffic to *.google.com
+
+Processing request: Show traffic to *.google.com
+Using template query: sourcetype="proxy" | where dhost LIKE "*.google.com" OR dhost="google.com" | stats count as request_count, sum(bytes) as total_bytes by dhost, srcip | sort -total_bytes
+Processed query: sourcetype="proxy" | where dest_host LIKE "*.google.com" OR dest_host="google.com" | stats count as request_count, sum(bytes_total) as total_bytes by dest_host, src | sort -total_bytes
+Final Query: sourcetype="proxy" | where dest_host LIKE "*.google.com" OR dest_host="google.com" | stats count as request_count, sum(bytes_total) as total_bytes by dest_host, src | sort -total_bytes
+------------------------------------------------------------
+
+User Request: Find errors from any microsoft.com subdomain
+
+Processing request: Find errors from any microsoft.com subdomain
+Using template query: sourcetype="proxy" | where (dhost LIKE "*.microsoft.com" OR dhost="microsoft.com") AND status>=400 | stats count as error_count by status, dhost | sort -error_count
+Processed query: sourcetype="proxy" | where (dest_host LIKE "*.microsoft.com" OR dest_host="microsoft.com") AND http_status>=400 | stats count as error_count by http_status, dest_host | sort -error_count
+Final Query: sourcetype="proxy" | where (dest_host LIKE "*.microsoft.com" OR dest_host="microsoft.com") AND http_status>=400 | stats count as error_count by http_status, dest_host | sort -error_count
+------------------------------------------------------------
+
+User Request: Show me access patterns for github.com and its subdomains
+
+Processing request: Show me access patterns for github.com and its subdomains
+Using template query: sourcetype="proxy" | where dhost LIKE "*.github.com" OR dhost="github.com" | stats count as request_count, sum(bytes) as total_bytes by dhost, srcip | sort -total_bytes
+Processed query: sourcetype="proxy" | where dest_host LIKE "*.github.com" OR dest_host="github.com" | stats count as request_count, sum(bytes_total) as total_bytes by dest_host, src | sort -total_bytes
+Final Query: sourcetype="proxy" | where dest_host LIKE "*.github.com" OR dest_host="github.com" | stats count as request_count, sum(bytes_total) as total_bytes by dest_host, src | sort -total_bytes
+------------------------------------------------------------
+
+User Request: Count unique users accessing *.amazon.com
+
+Processing request: Count unique users accessing *.amazon.com
+Using template query: sourcetype="proxy" | where dhost LIKE "*.amazon.com" OR dhost="amazon.com" | stats dc(srcip) as unique_users, count as request_count by dhost | sort -request_count
+Processed query: sourcetype="proxy" | where dest_host LIKE "*.amazon.com" OR dest_host="amazon.com" | stats dc(src) as unique_users, count as request_count by dest_host | sort -request_count
+Final Query: sourcetype="proxy" | where dest_host LIKE "*.amazon.com" OR dest_host="amazon.com" | stats dc(src) as unique_users, count as request_count by dest_host | sort -request_count
+------------------------------------------------------------
+
+User Request: Show .edu traffic in the last hour
+
+Processing request: Show .edu traffic in the last hour
+Using template query: sourcetype="proxy" | where dhost LIKE "*.edu" OR dhost="edu" | stats count as request_count, sum(bytes) as total_bytes by dhost, srcip | sort -total_bytes
+Processed query: sourcetype="proxy" | where dest_host LIKE "*.edu" OR dest_host="edu" | stats count as request_count, sum(bytes_total) as total_bytes by dest_host, src | sort -total_bytes
+Final Query: sourcetype="proxy" | where dest_host LIKE "*.edu" OR dest_host="edu" | stats count as request_count, sum(bytes_total) as total_bytes by dest_host, src | sort -total_bytes
+------------------------------------------------------------
+
+User Request: Find failed requests to microsoft.com today
+
+Processing request: Find failed requests to microsoft.com today
+Using template query: sourcetype="proxy" | where dhost LIKE "*.microsoft.com" OR dhost="microsoft.com" | stats count as request_count, sum(bytes) as total_bytes by dhost, srcip | sort -total_bytes
+Processed query: sourcetype="proxy" | where dest_host LIKE "*.microsoft.com" OR dest_host="microsoft.com" | stats count as request_count, sum(bytes_total) as total_bytes by dest_host, src | sort -total_bytes
+Final Query: sourcetype="proxy" | where dest_host LIKE "*.microsoft.com" OR dest_host="microsoft.com" | stats count as request_count, sum(bytes_total) as total_bytes by dest_host, src | sort -total_bytes
+------------------------------------------------------------
+
+User Request: What HTTP methods are used on *.github.com
+
+Processing request: What HTTP methods are used on *.github.com
+Using template query: sourcetype="proxy" | where dhost LIKE "*.github.com" OR dhost="github.com" | stats count as request_count by mtd, dhost | sort -request_count
+Processed query: sourcetype="proxy" | where dest_host LIKE "*.github.com" OR dest_host="github.com" | stats count as request_count by method, dest_host | sort -request_count
+Final Query: sourcetype="proxy" | where dest_host LIKE "*.github.com" OR dest_host="github.com" | stats count as request_count by method, dest_host | sort -request_count
+------------------------------------------------------------
+
+User Request: Show POST requests to api.example.com
+
+Processing request: Show POST requests to api.example.com
+Using template query: sourcetype="proxy" | where dhost LIKE "*.api.example.com" OR dhost="api.example.com" | stats count as request_count, sum(bytes) as total_bytes by dhost, srcip | sort -total_bytes
+Processed query: sourcetype="proxy" | where dest_host LIKE "*.api.example.com" OR dest_host="api.example.com" | stats count as request_count, sum(bytes_total) as total_bytes by dest_host, src | sort -total_bytes
+Final Query: sourcetype="proxy" | where dest_host LIKE "*.api.example.com" OR dest_host="api.example.com" | stats count as request_count, sum(bytes_total) as total_bytes by dest_host, src | sort -total_bytes
+
 ------------------------------------------------------------
 ```
 ## Current Limitations
