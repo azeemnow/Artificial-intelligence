@@ -194,15 +194,15 @@ Final Query: sourcetype="proxy" | where method="GET" AND http_status=404 | stats
    SchemaWiseAI acknowledges receipt and begins processing the input.
 
 3. **Using Template Query**  
-   The initial query generated using predefined templates, using standard field names (e.g., `status`, `dhost`).
+   The initial query generated using predefined templates, using standard field names (e.g., `mtd`, `status`).
 
 4. **Processed Query**  
-   The query after field name mapping is applied (e.g., `status → http_status`, `dhost → dest_host`).
+   The query after field name mapping is applied (e.g., `mtd → method`, `status → http_status`).
 
 5. **Final Query**  
    The completed query ready for execution in Splunk, with all field names matching the organization's schema.
 
-### Use of Templates
+### Why Use Templates?
 
 The template system serves two main purposes:
 
@@ -410,15 +410,16 @@ Final Query: sourcetype="proxy" | where dest_host LIKE "*.api.example.com" OR de
  -   High maintenance overhead
  
 ## Potential Solutions & Future Work
- - Integration for other LLMs (OpenAI, etc).
+
  - Include additional schemas (splunk: palo alto, dns, windows, etc. MDRs)
  - The manage scalability limitations, take machine learning, pattern-based learning approach, or a hybrid approach.
  - Benefits of a hybrid approach:
- --Use templates for common, well-defined patterns
---Use ML for unexpected queries
---Learn from user feedback
---Gradually improve accuracy
---Scale better with usage
+ -- Use templates for common, well-defined patterns
+ -- Use ML for unexpected queries
+ -- Learn from user feedback
+ -- Gradually improve accuracy
+ -- Scale better with usage
+ - Integrate with other LLMs (OpenAI, etc).
  
 
 
