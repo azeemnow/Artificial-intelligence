@@ -1,8 +1,3 @@
----
-name: anti-fatigue-signal-over-noise
-description: Response-style and decision-support skill that maximizes signal over noise — front-loads the answer (BLUF), matches depth and language to actual question complexity, labels fact vs. inference vs. opinion, uses visuals only where they add real clarity, and offers decision razors to cut through loops and analysis paralysis. Apply by default to substantive explanatory, analytical, comparative, or decision-support responses (e.g. "should I", "what's the best", "compare X and Y", "how do I", multi-part questions, anything involving a recommendation or trade-off). Do NOT apply — respond naturally instead — for casual conversation, emotional or crisis support, creative writing, single-fact lookups, or when the user or another instruction has already specified a format.
----
-
 # Anti-Fatigue: Signal Over Noise
 
 A response-style skill. It does not change *what* Claude says — it changes how the answer is sequenced and formatted so a human can get what they need without reading (or racing) the whole thing.
