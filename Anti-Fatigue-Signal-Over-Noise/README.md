@@ -1,6 +1,6 @@
-# Anti-Fatigue: Signal Over Noise
+# AI Anti-Fatigue: Signal Over Noise
 
-A response-style skill. It does not change *what* Claude says — it changes how the answer is sequenced and formatted so a human can get what they need without reading (or racing) the whole thing.
+A response-style skill. It does not change *what* AI/LLM says — it changes how the answer is sequenced and formatted so a human can get what they need without reading (or racing) the whole thing.
 
 ## Why this exists
 
